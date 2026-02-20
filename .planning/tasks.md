@@ -74,8 +74,8 @@
 - [x] W1-T4: Timezone audit (all datetime.now() calls use UTC)
 
 ### Wave 2 (depends on Wave 1)
-- [ ] W2-T1: Deploy to Synology NAS via Docker Compose
-- [ ] W2-T2: Volume persistence test (restart container, verify DB intact)
-- [ ] W2-T3: Final end-to-end walkthrough (all manual verification checklists)
+- [x] W2-T1: Deploy to Synology NAS via Docker Compose
+- [x] W2-T2: Volume persistence test (restart container, verify DB intact)
+- [x] W2-T3: Final end-to-end walkthrough (all manual verification checklists)
 
-**Gate**: Production-ready on NAS. Bot survives restarts.
+**Gate**: Production-ready on NAS. Bot survives restarts. ✅

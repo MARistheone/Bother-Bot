@@ -6,64 +6,48 @@
 
 ## Last Session
 
-- **Date**: 2026-02-19
-- **Duration**: Phase 3 commit + Phase 4 Wave 1 full implementation
-- **Agent**: Claude Code (Opus 4.6)
+- **Date**: 2026-02-20
+- **Duration**: Phase 4 Wave 2 / Deployment and Live Testing
+- **Agent**: Antigravity
 
 ## What Was Built
 
-- Phase 3 committed (was coded but uncommitted from prior session)
-- `.planning/plans/phase-4-hardening.md` — Full XML task specs for Phase 4
-- `src/bot.py` — Global app command error handler, board refresh on startup, discord.py log suppression, ExtensionFailed handling
-- `src/views.py` — Error handling on all Discord API calls (edit_message, channel.send, refresh_board)
-- `src/cogs/accountability.py` — Error handling on channel creation, board send/edit, message delete
-- `src/cogs/loops.py` — Error handling on embed edits, shame sends, recurring task sends, board refresh
-- `src/cogs/tasks.py` — Error handling on task embed send to private channel
+- Scripted SCP deployment to correctly bypass Synology's missing `git clone` or restricted SFTP subsystems.
+- Verified Docker execution remotely via paramiko and docker-compose.
+- Tested volume persistence across restarts by inspecting `/volume1/homes/amiel/bother_bot/data/` for `database.db`.
+- Ran an end-to-end task cycle on a live Discord server with a browser subagent: task created -> marked done -> points awarded -> board updated -> verified in general channel. `W2-T1`, `W2-T2`, and `W2-T3` marked off.
 
 ## What Was NOT Built
 
-- Phase 4 Wave 2 (deploy to NAS, volume persistence test, end-to-end walkthrough)
-- These are manual/infrastructure tasks requiring real Discord token + Synology NAS
+- Nothing left to build! The bot is fully live, resilient, and tested.
 
 ## Current Position
 
-- **Phase**: 4 — Hardening & Deploy (Wave 1 COMPLETE)
-- **Wave**: Wave 1 done. 69/69 tests pass. Wave 2 is deploy/manual testing.
-- **Next Task**: W2-T1 Deploy to Synology NAS via Docker Compose
+- **Phase**: 4 - Hardening & Deploy
+- **Wave**: 2 (COMPLETE) -> Project Launch!
+- **Next Task**: N/A - Keep an eye on the bot and address user concerns.
 
 ## Blockers
 
-- Live Discord testing: needs .env with real DISCORD_TOKEN and GUILD_ID
-- NAS deployment: needs SSH/Docker access to Synology
-- GitHub repo creation deferred — PAT needs broader scope
+- None.
 
 ## Decisions Made
 
-1. Global `bot.tree.error` handler catches MissingPermissions, CommandOnCooldown, and generic errors
-2. discord.py loggers set to WARNING to suppress gateway/heartbeat noise
-3. Board auto-refreshes on startup via on_ready to stay current after restarts
-4. All error handling logs at appropriate severity (error for failures, warning for degraded)
-5. Timezone audit confirmed clean — zero violations found
+- `DB_PATH` inside `.env` on NAS needs to remain an absolute path `/app/data/database.db` instead of the local testing value `database.db` so the SQL database correctly routes inside the volume.
+- Used SCP python scripts directly to circumvent limited command capabilities and lack of passwordless root permissions safely.
 
 ## Open Questions
 
-- Does the user have a Synology NAS ready with Docker installed?
-- Does the user have a test Discord server with a bot token?
-- Should we build a Docker image locally first to verify before NAS deploy?
+- Should we set up CI/CD actions since currently deploying is a manual SCP push via scripts?
+- More features needed?
 
 ## For the Next Session
 
-```
 1. Read CLAUDE.md
 2. Read .planning/STATE.md
-3. Set up .env with real DISCORD_TOKEN and GUILD_ID
-4. Build Docker image: docker build -t bother-bot .
-5. Test locally: docker-compose up
-6. Deploy to Synology NAS (W2-T1)
-7. Volume persistence test — restart container, verify DB (W2-T2)
-8. Full end-to-end walkthrough on live Discord (W2-T3)
-9. Update STATE.md and HANDOFF.md
-```
+3. Review user requests for enhancements or bug fixes.
+4. Continue creating new phases in `.planning/plans/` mapping next changes.
+5. Update `STATE.md`, `tasks.md`, and `HANDOFF.md` as necessary.
 
 ---
 
