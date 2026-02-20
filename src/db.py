@@ -230,6 +230,16 @@ async def update_task_due_date(task_id: int, new_due_date: str) -> None:
         await db.commit()
 
 
+async def update_task_details(task_id: int, description: str, due_date: str, recurrence: str) -> None:
+    """Update all main details of a task."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE tasks SET description = ?, due_date = ?, recurrence = ? WHERE id = ?",
+            (description, due_date, recurrence, task_id),
+        )
+        await db.commit()
+
+
 async def get_active_task_ids() -> list[int]:
     """Return IDs of all pending/overdue tasks (for persistent view re-registration)."""
     async with aiosqlite.connect(DB_PATH) as db:

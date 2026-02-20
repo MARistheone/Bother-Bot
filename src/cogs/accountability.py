@@ -8,8 +8,8 @@ from discord import app_commands
 from discord.ext import commands
 
 from src import db
-from src.constants import PROD_MESSAGES
-from src.embeds import build_board_embed, build_welcome_embed
+from src.constants import PROD_PENDING_MESSAGES, PROD_OVERDUE_MESSAGES
+from src.embeds import build_board_embed, build_welcome_embed, build_info_embed
 
 log = logging.getLogger("bother-bot")
 
@@ -129,6 +129,12 @@ class AccountabilityCog(commands.Cog):
         )
         log.info("User %s opted in, channel %s created", uid, channel.id)
 
+        # Auto-refresh the board
+        try:
+            await refresh_board(self.bot)
+        except Exception as e:
+            log.warning("Failed to refresh board after user %s opt-in: %s", uid, e)
+
     @app_commands.command(
         name="board",
         description="Force refresh the accountability board (admin only)",
@@ -187,11 +193,11 @@ class AccountabilityCog(commands.Cog):
 
     @app_commands.command(
         name="prod",
-        description="Publicly call out a user about a specific overdue task",
+        description="Publicly call out a user about a specific task",
     )
     @app_commands.describe(
         user="The user to prod",
-        task="Which overdue task to call them out on",
+        task="Which task to call them out on",
     )
     async def prod(
         self,
@@ -201,16 +207,20 @@ class AccountabilityCog(commands.Cog):
     ) -> None:
         uid = str(user.id)
 
-        # Verify the task actually exists and is overdue for this user
+        # Verify the task actually exists and is active for this user
+        pending = await db.get_tasks_for_user(uid, status="pending")
         overdue = await db.get_tasks_for_user(uid, status="overdue")
-        match = next((t for t in overdue if t["description"] == task), None)
+        active_tasks = pending + overdue
+
+        match = next((t for t in active_tasks if t["description"] == task), None)
         if not match:
             await interaction.response.send_message(
                 "They're actually on top of things... for now.", ephemeral=True
             )
             return
 
-        message = random.choice(PROD_MESSAGES).format(
+        msglst = PROD_OVERDUE_MESSAGES if match["status"] == "overdue" else PROD_PENDING_MESSAGES
+        message = random.choice(msglst).format(
             user=f"<@{uid}>", task=task
         )
         await interaction.response.send_message(message)
@@ -222,16 +232,19 @@ class AccountabilityCog(commands.Cog):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        """Autocomplete overdue task descriptions for the selected user."""
+        """Autocomplete active task descriptions for the selected user."""
         user = interaction.namespace.user
         if not user:
             return []
 
-        uid = str(user.id)
+        # During autocomplete, 'user' may be a resolved Member or just a string ID
+        uid = str(getattr(user, "id", user))
+        pending = await db.get_tasks_for_user(uid, status="pending")
         overdue = await db.get_tasks_for_user(uid, status="overdue")
+        active_tasks = pending + overdue
 
         choices = []
-        for t in overdue:
+        for t in active_tasks:
             desc = t["description"]
             if current.lower() in desc.lower():
                 # Discord limits Choice name to 100 chars
@@ -240,6 +253,17 @@ class AccountabilityCog(commands.Cog):
             if len(choices) >= 25:  # Discord max autocomplete results
                 break
         return choices
+
+    @app_commands.command(
+        name="post-info",
+        description="Deploy the instructions embed to the current channel (admin)",
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def post_info(self, interaction: discord.Interaction) -> None:
+        embed = build_info_embed()
+        await interaction.channel.send(embed=embed)
+        await interaction.response.send_message("Info embed posted successfully!", ephemeral=True)
+        log.info("Info embed posted in channel %s", interaction.channel_id)
 
 
 async def setup(bot: commands.Bot) -> None:

@@ -6,7 +6,7 @@ import logging
 import discord
 
 from src import db
-from src.embeds import build_task_embed, build_celebration_embed
+from src.embeds import build_task_embed, build_celebration_embed, build_snooze_embed
 from src.scoring import calculate_completion_score, calculate_snooze_penalty
 
 log = logging.getLogger("bother-bot")
@@ -175,6 +175,19 @@ class TaskView(discord.ui.View):
             await interaction.response.edit_message(embed=embed, view=self)
         except discord.HTTPException as e:
             log.error("Failed to edit task %d on snooze: %s", self.task_id, e)
+
+        # Send snooze notification to meat grinder (if configured)
+        meat_grinder_id = await db.get_config("meat_grinder_channel_id")
+        if meat_grinder_id:
+            channel = interaction.client.get_channel(int(meat_grinder_id))
+            if channel:
+                try:
+                    member = interaction.guild.get_member(int(uid))
+                    name = member.display_name if member else f"User {uid}"
+                    snooze_embed = build_snooze_embed(name, task["description"])
+                    await channel.send(embed=snooze_embed)
+                except (discord.Forbidden, discord.HTTPException) as e:
+                    log.warning("Failed to send snooze notification for task %d: %s", self.task_id, e)
 
         # Auto-refresh the board
         try:

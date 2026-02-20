@@ -12,6 +12,7 @@ from src.constants import (
     COLOR_DEFAULT_TASK,
     COLOR_OVERDUE,
     SHAME_MESSAGES,
+    SNOOZE_MESSAGES,
     STATUS_EMOJI,
 )
 
@@ -114,6 +115,23 @@ def build_shame_embed(
     return embed
 
 
+def build_snooze_embed(
+    user_name: str, task_description: str
+) -> discord.Embed:
+    """Build a notification embed for a snoozed task."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    message = random.choice(SNOOZE_MESSAGES).format(
+        user=user_name, task=task_description
+    )
+    embed = discord.Embed(
+        title="\U000023f3 Task Snoozed",
+        description=message,
+        color=COLOR_DEFAULT_TASK,
+        timestamp=now,
+    )
+    return embed
+
+
 def build_welcome_embed(channel_mention: str) -> discord.Embed:
     """Build the welcome embed sent to a user's new private channel."""
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -129,5 +147,52 @@ def build_welcome_embed(channel_mention: str) -> discord.Embed:
         ),
         color=COLOR_DEFAULT_TASK,
         timestamp=now,
+    )
+    return embed
+
+
+def build_info_embed() -> discord.Embed:
+    """Build the general bot instructions/info embed."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    embed = discord.Embed(
+        title="\U0001f916 Bother Bot — How It Works",
+        description=(
+            "Welcome to the accountability server! I am here to make sure you get your stuff done, "
+            "or shame you if you don't. Here is everything you need to know."
+        ),
+        color=COLOR_DEFAULT_TASK,
+        timestamp=now,
+    )
+    embed.add_field(
+        name="\U0001f3ab Getting Started",
+        value="Use `/opt-in` in any channel to register. I will create a private task channel just for you.",
+        inline=False
+    )
+    embed.add_field(
+        name="\U0001f4dd Adding Tasks",
+        value=(
+            "Use `/task add` to create a task. You can use natural language for the due date "
+            "(e.g., 'tomorrow', 'next friday', 'Oct 15'). If you don't set one, it defaults to tomorrow."
+        ),
+        inline=False
+    )
+    embed.add_field(
+        name="\U0001f3ae The Game (Points)",
+        value=(
+            "\U0001f7e2 **Complete a task:** +10 points\n"
+            "\U000023f3 **Snooze a task:** -2 points\n"
+            "\U0001f534 **Overdue task:** -5 points (per day!)"
+        ),
+        inline=False
+    )
+    embed.add_field(
+        name="\U0001f4e3 Board & Consequences",
+        value=(
+            "• Your score and active tasks are tracked on the `#accountability-board` in real-time.\n"
+            "• Snoozed tasks are publicly called out in the meat grinder channel.\n"
+            "• At 9 PM ET every day, anyone with pending or overdue tasks goes on the **Wall of Shame**.\n"
+            "• Anyone can use `/prod @user [task]` to mock you about an active task."
+        ),
+        inline=False
     )
     return embed

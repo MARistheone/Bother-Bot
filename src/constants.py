@@ -47,11 +47,29 @@ SHAME_MESSAGES = [
 
 # ── Prod Messages ─────────────────────────────────────────────
 # Placeholders: {user}, {task}
-PROD_MESSAGES = [
+PROD_PENDING_MESSAGES = [
     "> Hey {user}, a little birdie told me **{task}** isn't done yet. Tick tock.",
     "> {user}! Remember **{task}**? Yeah, it's still waiting for you.",
     "> Paging {user}! **{task}** is collecting dust. Just saying.",
     "> {user}, **{task}** is starting to grow cobwebs. You gonna do something about that?",
     "> Excuse me {user}, but **{task}** would like a word with you.",
     "> {user}... **{task}** isn't going to do itself. Or IS it? (Spoiler: it's not.)",
+]
+
+PROD_OVERDUE_MESSAGES = [
+    "> \U0001f6a8 RED ALERT, {user}. **{task}** is officially OVERDUE. Get on it.",
+    "> Did you forget about **{task}** {user}? Because the deadline didn't.",
+    "> Hello {user}? **{task}** called from the past. It wants its completion back.",
+    "> {user}, **{task}** is overdue and silently judging you.",
+    "> \u26a0\ufe0f WARNING: {user} is slacking. **{task}** is past its deadline!",
+]
+
+# ── Snooze Messages ─────────────────────────────────────────────
+# Placeholders: {user}, {task}
+SNOOZE_MESSAGES = [
+    "{user} just snoozed **{task}**. Procrastination is an art form.",
+    "Booo! {user} pushed off **{task}** for another day. Weak.",
+    "{user} is cowardly running away from **{task}**... again.",
+    "Another day, another excuse. {user} snoozed **{task}**.",
+    "{user} kicked **{task}** down the road. Classic.",
 ]
