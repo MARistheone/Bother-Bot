@@ -37,6 +37,12 @@ async def init_db() -> None:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS config (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
         await db.commit()
 
 
@@ -191,3 +197,44 @@ async def get_completed_recurring_tasks() -> list:
             "AND recurrence != 'none'"
         )
         return await cursor.fetchall()
+
+
+async def get_config(key: str) -> str | None:
+    """Return a config value or None."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT value FROM config WHERE key = ?",
+            (key,),
+        )
+        row = await cursor.fetchone()
+        return row[0] if row else None
+
+
+async def set_config(key: str, value: str) -> None:
+    """Insert or update a config value."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)",
+            (key, value),
+        )
+        await db.commit()
+
+
+async def update_task_due_date(task_id: int, new_due_date: str) -> None:
+    """Update a task's due date."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE tasks SET due_date = ? WHERE id = ?",
+            (new_due_date, task_id),
+        )
+        await db.commit()
+
+
+async def get_active_task_ids() -> list[int]:
+    """Return IDs of all pending/overdue tasks (for persistent view re-registration)."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "SELECT id FROM tasks WHERE status IN ('pending', 'overdue')"
+        )
+        rows = await cursor.fetchall()
+        return [row[0] for row in rows]

@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from src.db import init_db
+from src.db import init_db, get_active_task_ids
 from src.views import TaskView
 
 load_dotenv()
@@ -45,10 +45,11 @@ async def setup_hook():
     """Register persistent views and load cogs."""
     await init_db()
 
-    # Re-register persistent TaskViews for existing tasks.
-    # Phase 2 will query active task IDs from the DB and register
-    # a TaskView for each. For now, the pattern is established.
-    # Example: bot.add_view(TaskView(task_id=some_id))
+    # Re-register persistent TaskViews so buttons survive restarts
+    task_ids = await get_active_task_ids()
+    for tid in task_ids:
+        bot.add_view(TaskView(task_id=tid))
+    log.info("Re-registered %d persistent TaskViews", len(task_ids))
 
     cog_extensions = [
         "src.cogs.tasks",

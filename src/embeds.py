@@ -112,3 +112,22 @@ def build_shame_embed(
         timestamp=now,
     )
     return embed
+
+
+def build_welcome_embed(channel_mention: str) -> discord.Embed:
+    """Build the welcome embed sent to a user's new private channel."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    embed = discord.Embed(
+        title="\U0001f44b Welcome to Your Task Inbox!",
+        description=(
+            "This is your private task channel. "
+            "New tasks will appear here with buttons to manage them.\n\n"
+            "**How it works:**\n"
+            "\U0001f7e2 **Mark Done** — Complete the task (+10 pts)\n"
+            "\U000023f3 **Snooze** — Push it back 1 day (-2 pts)\n\n"
+            "Add tasks with `/task add` and stay accountable!"
+        ),
+        color=COLOR_DEFAULT_TASK,
+        timestamp=now,
+    )
+    return embed
