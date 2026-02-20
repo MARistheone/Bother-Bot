@@ -1,0 +1,57 @@
+"""Design tokens, scoring values, and message templates. Single source of truth."""
+
+import os
+
+# ── Color Tokens ──────────────────────────────────────────────
+COLOR_BOARD = 0x2B2D31
+COLOR_DEFAULT_TASK = 0x5865F2
+COLOR_COMPLETE = 0x57F287
+COLOR_OVERDUE = 0xED4245
+
+# ── Scoring Constants ─────────────────────────────────────────
+SCORE_COMPLETE = 10
+SCORE_OVERDUE_PER_DAY = -5
+SCORE_SNOOZE = -2
+
+# ── Database Path ─────────────────────────────────────────────
+DB_PATH = os.environ.get("DB_PATH", "/app/data/database.db")
+
+# ── Status Emojis ─────────────────────────────────────────────
+STATUS_EMOJI = {
+    "pending": "\U0001f7e1",     # :yellow_circle:
+    "completed": "\U0001f7e2",   # :green_circle:
+    "overdue": "\U0001f534",     # :red_circle:
+}
+
+# ── Celebration Messages ──────────────────────────────────────
+# Placeholders: {user}, {task}
+CELEBRATION_MESSAGES = [
+    "Well well well, {user} actually did something. **{task}** — done. Don't let it go to your head.",
+    "Stop the presses! {user} completed **{task}**. Miracles DO happen.",
+    "Look at {user} being a functioning adult! **{task}** — checked off. Proud of you (kinda).",
+    "{user} just crushed **{task}**. Someone get this person a trophy... or at least a snack.",
+    "Alert the media — {user} finished **{task}**. The streak of disappointment is OVER.",
+    "Oh snap, {user} knocked out **{task}**! Keep this energy up and you might actually impress me.",
+]
+
+# ── Shame Messages ────────────────────────────────────────────
+# Placeholders: {user}, {tasks}
+SHAME_MESSAGES = [
+    "Hey {user}, remember these? Yeah, still not done:\n{tasks}",
+    "{user}... buddy... pal... these tasks aren't going to do themselves:\n{tasks}",
+    "Attention everyone: {user} is allergic to productivity. Evidence:\n{tasks}",
+    "Breaking news: {user} continues to ignore their responsibilities:\n{tasks}",
+    "Dear {user}, your tasks called. They miss you. Please visit them:\n{tasks}",
+    "{user}, I'm not mad. I'm just disappointed. Very, very disappointed.\n{tasks}",
+]
+
+# ── Prod Messages ─────────────────────────────────────────────
+# Placeholders: {user}, {tasks}
+PROD_MESSAGES = [
+    "> Hey {user}, a little birdie told me you've got unfinished business:\n{tasks}",
+    "> {user}! Time to face the music. Your overdue tasks:\n{tasks}",
+    "> Paging {user}! These tasks are collecting dust:\n{tasks}",
+    "> {user}, your tasks are starting to grow cobwebs:\n{tasks}",
+    "> Excuse me {user}, but these tasks would like a word with you:\n{tasks}",
+    "> {user}... tick tock. These aren't getting any younger:\n{tasks}",
+]
