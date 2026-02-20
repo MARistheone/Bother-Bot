@@ -46,12 +46,12 @@ SHAME_MESSAGES = [
 ]
 
 # ── Prod Messages ─────────────────────────────────────────────
-# Placeholders: {user}, {tasks}
+# Placeholders: {user}, {task}
 PROD_MESSAGES = [
-    "> Hey {user}, a little birdie told me you've got unfinished business:\n{tasks}",
-    "> {user}! Time to face the music. Your overdue tasks:\n{tasks}",
-    "> Paging {user}! These tasks are collecting dust:\n{tasks}",
-    "> {user}, your tasks are starting to grow cobwebs:\n{tasks}",
-    "> Excuse me {user}, but these tasks would like a word with you:\n{tasks}",
-    "> {user}... tick tock. These aren't getting any younger:\n{tasks}",
+    "> Hey {user}, a little birdie told me **{task}** isn't done yet. Tick tock.",
+    "> {user}! Remember **{task}**? Yeah, it's still waiting for you.",
+    "> Paging {user}! **{task}** is collecting dust. Just saying.",
+    "> {user}, **{task}** is starting to grow cobwebs. You gonna do something about that?",
+    "> Excuse me {user}, but **{task}** would like a word with you.",
+    "> {user}... **{task}** isn't going to do itself. Or IS it? (Spoiler: it's not.)",
 ]
