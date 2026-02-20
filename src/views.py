@@ -63,21 +63,72 @@ class TaskView(discord.ui.View):
         embed = build_task_embed(
             task["description"], "completed", task["due_date"], task["recurrence"]
         )
-        await interaction.response.edit_message(embed=embed, view=None)
+        try:
+            await interaction.response.edit_message(embed=embed, view=None)
+        except discord.HTTPException as e:
+            log.error("Failed to edit task %d message: %s", self.task_id, e)
 
         # Send celebration to meat grinder (if configured)
         meat_grinder_id = await db.get_config("meat_grinder_channel_id")
         if meat_grinder_id:
             channel = interaction.client.get_channel(int(meat_grinder_id))
             if channel:
-                member = interaction.guild.get_member(int(uid))
-                name = member.display_name if member else f"User {uid}"
-                celeb_embed = build_celebration_embed(name, task["description"])
-                await channel.send(embed=celeb_embed)
+                try:
+                    member = interaction.guild.get_member(int(uid))
+                    name = member.display_name if member else f"User {uid}"
+                    celeb_embed = build_celebration_embed(name, task["description"])
+                    await channel.send(embed=celeb_embed)
+                except (discord.Forbidden, discord.HTTPException) as e:
+                    log.warning("Failed to send celebration for task %d: %s", self.task_id, e)
+
+        # Regenerate recurring task immediately
+        if task["recurrence"] != "none":
+            if task["due_date"]:
+                try:
+                    base = datetime.datetime.strptime(task["due_date"], "%Y-%m-%d")
+                except ValueError:
+                    base = datetime.datetime.now(datetime.timezone.utc)
+            else:
+                base = datetime.datetime.now(datetime.timezone.utc)
+
+            delta = datetime.timedelta(
+                days=1 if task["recurrence"] == "daily" else 7
+            )
+            next_due = (base + delta).strftime("%Y-%m-%d")
+
+            new_id = await db.add_task(
+                uid, task["description"], next_due, task["recurrence"]
+            )
+            new_embed = build_task_embed(
+                task["description"], "pending", next_due, task["recurrence"]
+            )
+            new_view = TaskView(task_id=new_id)
+
+            # Send to user's private channel
+            user = await db.get_user(uid)
+            if user and user["private_channel_id"]:
+                priv_ch = interaction.client.get_channel(
+                    int(user["private_channel_id"])
+                )
+                if priv_ch:
+                    try:
+                        new_msg = await priv_ch.send(embed=new_embed, view=new_view)
+                        await db.update_task_message_id(new_id, str(new_msg.id))
+                    except (discord.Forbidden, discord.HTTPException) as e:
+                        log.warning("Failed to send recurring task %d: %s", new_id, e)
+
+            interaction.client.add_view(new_view)
+            log.info(
+                "Recurring task regenerated: %d -> %d (%s, due %s)",
+                self.task_id, new_id, task["recurrence"], next_due,
+            )
 
         # Auto-refresh the board
-        from src.cogs.accountability import refresh_board
-        await refresh_board(interaction.client)
+        try:
+            from src.cogs.accountability import refresh_board
+            await refresh_board(interaction.client)
+        except Exception as e:
+            log.warning("Failed to refresh board after task %d completion: %s", self.task_id, e)
 
         log.info("Task %d completed by %s (+%d pts)", self.task_id, uid, score_delta)
 
@@ -120,11 +171,17 @@ class TaskView(discord.ui.View):
         embed = build_task_embed(
             task["description"], "pending", new_due_str, task["recurrence"]
         )
-        await interaction.response.edit_message(embed=embed, view=self)
+        try:
+            await interaction.response.edit_message(embed=embed, view=self)
+        except discord.HTTPException as e:
+            log.error("Failed to edit task %d on snooze: %s", self.task_id, e)
 
         # Auto-refresh the board
-        from src.cogs.accountability import refresh_board
-        await refresh_board(interaction.client)
+        try:
+            from src.cogs.accountability import refresh_board
+            await refresh_board(interaction.client)
+        except Exception as e:
+            log.warning("Failed to refresh board after task %d snooze: %s", self.task_id, e)
 
         log.info(
             "Task %d snoozed by %s to %s (%d pts)",

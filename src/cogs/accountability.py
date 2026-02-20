@@ -1,5 +1,6 @@
-"""/opt-in, /board refresh, /config commands. Delegates to embeds.py and db.py."""
+"""/opt-in, /board refresh, /prod, /config commands. Delegates to embeds.py and db.py."""
 
+import random
 import logging
 
 import discord
@@ -7,6 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from src import db
+from src.constants import PROD_MESSAGES
 from src.embeds import build_board_embed, build_welcome_embed
 
 log = logging.getLogger("bother-bot")
@@ -56,9 +58,15 @@ async def refresh_board(bot: commands.Bot) -> None:
             return
         except discord.NotFound:
             pass  # Message was deleted, send a new one
+        except (discord.Forbidden, discord.HTTPException) as e:
+            log.warning("Failed to edit board message: %s", e)
+            return
 
-    msg = await channel.send(embed=embed)
-    await db.set_config("board_message_id", str(msg.id))
+    try:
+        msg = await channel.send(embed=embed)
+        await db.set_config("board_message_id", str(msg.id))
+    except (discord.Forbidden, discord.HTTPException) as e:
+        log.error("Failed to send board embed: %s", e)
 
 
 class AccountabilityCog(commands.Cog):
@@ -94,16 +102,27 @@ class AccountabilityCog(commands.Cog):
             ),
         }
 
-        channel = await guild.create_text_channel(
-            f"{interaction.user.display_name}-tasks",
-            overwrites=overwrites,
-        )
+        try:
+            channel = await guild.create_text_channel(
+                f"{interaction.user.display_name}-tasks",
+                overwrites=overwrites,
+            )
+        except (discord.Forbidden, discord.HTTPException) as e:
+            log.error("Failed to create private channel for user %s: %s", uid, e)
+            await interaction.response.send_message(
+                "Couldn't create your task channel. The bot may lack permissions.",
+                ephemeral=True,
+            )
+            return
 
         await db.set_user_private_channel(uid, str(channel.id))
 
         # Send welcome embed to the new channel
         embed = build_welcome_embed(channel.mention)
-        await channel.send(embed=embed)
+        try:
+            await channel.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException) as e:
+            log.warning("Failed to send welcome embed to %s: %s", channel.id, e)
 
         await interaction.response.send_message(
             f"You're in! Check out {channel.mention}", ephemeral=True
@@ -145,7 +164,7 @@ class AccountabilityCog(commands.Cog):
             try:
                 old_msg = await interaction.channel.fetch_message(int(old_msg_id))
                 await old_msg.delete()
-            except discord.NotFound:
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
                 pass
 
         await interaction.response.send_message(embed=embed)
@@ -165,6 +184,62 @@ class AccountabilityCog(commands.Cog):
             f"This channel is now the meat grinder \U0001f356", ephemeral=True
         )
         log.info("Meat grinder set to channel %s", interaction.channel_id)
+
+    @app_commands.command(
+        name="prod",
+        description="Publicly call out a user about a specific overdue task",
+    )
+    @app_commands.describe(
+        user="The user to prod",
+        task="Which overdue task to call them out on",
+    )
+    async def prod(
+        self,
+        interaction: discord.Interaction,
+        user: discord.Member,
+        task: str,
+    ) -> None:
+        uid = str(user.id)
+
+        # Verify the task actually exists and is overdue for this user
+        overdue = await db.get_tasks_for_user(uid, status="overdue")
+        match = next((t for t in overdue if t["description"] == task), None)
+        if not match:
+            await interaction.response.send_message(
+                "They're actually on top of things... for now.", ephemeral=True
+            )
+            return
+
+        message = random.choice(PROD_MESSAGES).format(
+            user=f"<@{uid}>", task=task
+        )
+        await interaction.response.send_message(message)
+        log.info("User %s prodded %s about: %s", interaction.user.id, uid, task)
+
+    @prod.autocomplete("task")
+    async def prod_task_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Autocomplete overdue task descriptions for the selected user."""
+        user = interaction.namespace.user
+        if not user:
+            return []
+
+        uid = str(user.id)
+        overdue = await db.get_tasks_for_user(uid, status="overdue")
+
+        choices = []
+        for t in overdue:
+            desc = t["description"]
+            if current.lower() in desc.lower():
+                # Discord limits Choice name to 100 chars
+                label = desc[:100]
+                choices.append(app_commands.Choice(name=label, value=desc))
+            if len(choices) >= 25:  # Discord max autocomplete results
+                break
+        return choices
 
 
 async def setup(bot: commands.Bot) -> None:

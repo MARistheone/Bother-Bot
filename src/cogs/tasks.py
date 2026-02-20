@@ -71,8 +71,16 @@ class TasksCog(commands.Cog):
             )
             return
 
-        msg = await channel.send(embed=embed, view=view)
-        await db.update_task_message_id(task_id, str(msg.id))
+        try:
+            msg = await channel.send(embed=embed, view=view)
+            await db.update_task_message_id(task_id, str(msg.id))
+        except (discord.Forbidden, discord.HTTPException) as e:
+            log.error("Failed to send task %d to channel: %s", task_id, e)
+            await interaction.response.send_message(
+                "Task saved but couldn't send to your channel. Contact an admin.",
+                ephemeral=True,
+            )
+            return
 
         await interaction.response.send_message(
             f"Task added! Check {channel.mention}", ephemeral=True
