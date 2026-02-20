@@ -53,25 +53,25 @@
 ## Phase 3: Automation Loops (the "bother" engine)
 
 ### Wave 1 (parallel)
-- [ ] W1-T1: Overdue checker loop (hourly - mark overdue, red embed, deduct points)
-- [ ] W1-T2: Wall of Shame loop (9PM daily - ping users with pending/overdue tasks)
-- [ ] W1-T3: Daily Reset loop (midnight - regenerate recurring tasks, clean completed)
+- [x] W1-T1: Overdue checker loop (hourly - mark overdue, red embed, deduct points)
+- [x] W1-T2: Wall of Shame loop (9PM daily - ping users with pending/overdue tasks)
+- [x] W1-T3: Daily Reset loop (midnight - regenerate recurring tasks, clean completed)
 
 ### Wave 2 (depends on Wave 1)
-- [ ] W2-T1: /prod command (public reminder for user's overdue tasks)
-- [ ] W2-T2: Recurring task generation on completion (daily/weekly cycle)
+- [x] W2-T1: /prod command (public reminder for user's overdue tasks)
+- [x] W2-T2: Recurring task generation on completion (daily/weekly cycle)
 
-**Gate**: Full cycle: create user -> add task -> overdue -> shame -> complete -> celebrate.
+**Gate**: Full cycle: create user -> add task -> overdue -> shame -> complete -> celebrate. ✅ (69/69 tests pass)
 
 ---
 
 ## Phase 4: Hardening & Deploy
 
 ### Wave 1 (parallel)
-- [ ] W1-T1: Error handling (rate limits, deleted channels, permission errors)
-- [ ] W1-T2: Bot restart resilience (re-register persistent views, re-fetch board message)
-- [ ] W1-T3: Logging setup (structured logs to stdout for Docker)
-- [ ] W1-T4: Timezone audit (all datetime.now() calls use UTC)
+- [x] W1-T1: Error handling (rate limits, deleted channels, permission errors)
+- [x] W1-T2: Bot restart resilience (re-register persistent views, re-fetch board message)
+- [x] W1-T3: Logging setup (structured logs to stdout for Docker)
+- [x] W1-T4: Timezone audit (all datetime.now() calls use UTC)
 
 ### Wave 2 (depends on Wave 1)
 - [ ] W2-T1: Deploy to Synology NAS via Docker Compose
