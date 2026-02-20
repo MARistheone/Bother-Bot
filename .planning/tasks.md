@@ -19,15 +19,15 @@
 - [x] W1-T4: Scoring module (pure point calculation functions)
 
 ### Wave 2 (depends on Wave 1)
-- [ ] W2-T1: Embed builders (all 4 embed types: task pending/complete/overdue, board)
-- [ ] W2-T2: Persistent View classes (TaskView with Done/Snooze buttons)
-- [ ] W2-T3: Embed verification tests (test_embeds.py)
-- [ ] W2-T4: DB + scoring tests (test_db.py, test_scoring.py)
+- [x] W2-T1: Embed builders (all 4 embed types: task pending/complete/overdue, board)
+- [x] W2-T2: Persistent View classes (TaskView with Done/Snooze buttons)
+- [x] W2-T3: Embed verification tests (test_embeds.py)
+- [x] W2-T4: DB + scoring tests (test_db.py, test_scoring.py)
 
 ### Wave 3 (depends on Wave 2)
-- [ ] W3-T1: Bot entry point with cog loading skeleton (bot.py)
+- [x] W3-T1: Bot entry point with cog loading skeleton (bot.py)
 
-**Gate**: All tests pass. Docker image builds.
+**Gate**: All tests pass. Docker image builds. ✅
 
 ---
 

@@ -7,63 +7,60 @@
 ## Last Session
 
 - **Date**: 2026-02-19
-- **Duration**: Phase 1 Wave 1 implementation
+- **Duration**: Phase 1 Waves 2-3 implementation + gate
 - **Agent**: Claude Code (Opus 4.6)
 
 ## What Was Built
 
-- `Dockerfile` — python:3.11-slim, TZ=America/New_York, pip install, CMD python -m src.bot
-- `docker-compose.yml` — accountability-bot service, volume, env_file, restart policy
-- `requirements.txt` — discord.py>=2.3, aiosqlite>=0.19, python-dotenv>=1.0
-- `.gitignore`, `.env.example`, `data/.gitkeep`
-- `src/__init__.py`, `src/cogs/__init__.py`, `tests/__init__.py`
-- `src/constants.py` — colors, scores, emojis, DB_PATH, 6 celebration/shame/prod message templates each
-- `src/db.py` — init_db + 15 CRUD functions, WAL mode, parameterized queries, Row factory
-- `src/scoring.py` — 4 pure functions (completion, overdue penalty, snooze penalty, days overdue)
-- `tests/test_scoring.py` — 11 tests, all passing
-- Dev env: Python 3.11.9, .venv, GitHub CLI, git identity configured
+- `src/embeds.py` — build_task_embed (pending/complete/overdue), build_board_embed, build_celebration_embed, build_shame_embed
+- `src/views.py` — TaskView with Done (success) and Snooze (secondary) buttons, timeout=None, deterministic custom_ids
+- `src/bot.py` — commands.Bot, setup_hook (init_db, cog loading), on_ready (tree sync), logging
+- `tests/test_embeds.py` — 26 tests covering all embed types, colors, fields, sorting, timestamps
+- `tests/test_db.py` — 17 tests covering all CRUD ops, overdue candidates, recurring tasks, score accumulation
+- Installed pytest-asyncio for async test support
 
 ## What Was NOT Built
 
-- Phase 1 Wave 2 (embeds, views, embed tests, DB tests)
-- Phase 1 Wave 3 (bot.py entry point)
+- Phase 2 plan file (needs to be created before Phase 2 work begins)
+- Cog files (src/cogs/tasks.py, accountability.py, loops.py) — skeleton only, loaded by bot.py
 - GitHub remote repo (PAT lacks Administration permission)
 
 ## Current Position
 
-- **Phase**: 1 — Foundation
-- **Wave**: 1 (COMPLETE) → Wave 2 next
-- **Next Task**: W2-T1 through W2-T4 (embeds, views, tests)
+- **Phase**: 1 — Foundation (COMPLETE)
+- **Wave**: All waves done. Phase 1 Gate passed (54/54 tests, bot imports, Dockerfile verified)
+- **Next Task**: Create Phase 2 plan, then execute Phase 2 Wave 1
 
 ## Blockers
 
 - GitHub repo creation deferred — user's PAT needs broader scope
+- Docker not available on dev machine (builds on Synology NAS)
+- Phase 2 requires a test Discord server with bot token in .env
 
 ## Decisions Made
 
-1. Dev environment uses .venv (not system Python), activated via `source .venv/Scripts/activate`
-2. DB testing uses temp file (not `:memory:`) because each aiosqlite.connect(":memory:") is a separate database
-3. Python path: `/c/Users/Amiel/AppData/Local/Programs/Python/Python311`
-4. gh CLI path: `/c/Program Files/GitHub CLI`
+1. discord.py View requires running event loop — verify scripts use asyncio.run()
+2. pytest-asyncio added for async DB tests (mode=strict)
+3. DB tests use tmp_path + monkeypatch to isolate DB_PATH per test
+4. Cog loading in bot.py silently skips missing extensions (ExtensionNotFound)
 
 ## Open Questions
 
-- None
+- Does the user have a test Discord server set up with a bot token?
+- Should Phase 2 plan be created now or does the user want to review Phase 1 first?
 
 ## For the Next Session
 
 ```
 1. Read CLAUDE.md
 2. Read .planning/STATE.md
-3. Read .planning/plans/phase-1-foundation.md (Wave 2 section)
+3. Create .planning/plans/phase-2-core-commands.md (XML task specs for Phase 2)
 4. Activate venv: source .venv/Scripts/activate
-5. Execute Wave 2 tasks (W2-T1 through W2-T4)
-6. Run pytest for embed + DB tests
-7. Atomic git commit per task
-8. Check off tasks in .planning/tasks.md
-9. Then execute Wave 3 (W3-T1: bot.py)
-10. Run Phase 1 Gate checklist
-11. Update STATE.md and HANDOFF.md
+5. Set up .env with real DISCORD_TOKEN and GUILD_ID
+6. Execute Phase 2 Wave 1 (W1-T1: /opt-in, W1-T2: /task add)
+7. Test against live Discord server
+8. Atomic git commit per task
+9. Update STATE.md and HANDOFF.md
 ```
 
 ---
