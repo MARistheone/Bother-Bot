@@ -34,19 +34,19 @@
 ## Phase 2: Core Commands (requires test Discord server)
 
 ### Wave 1 (parallel)
-- [ ] W1-T1: /opt-in command + private channel creation with permissions
-- [ ] W1-T2: /task add command + embed delivery to private channel
+- [x] W1-T1: /opt-in command + private channel creation with permissions
+- [x] W1-T2: /task add command + embed delivery to private channel
 
 ### Wave 2 (depends on Wave 1)
-- [ ] W2-T1: Mark Done button handler (green embed, remove buttons, +10 score)
-- [ ] W2-T2: Snooze button handler (new due date, -2 score)
-- [ ] W2-T3: /board refresh + accountability board embed
+- [x] W2-T1: Mark Done button handler (green embed, remove buttons, +10 score)
+- [x] W2-T2: Snooze button handler (new due date, -2 score)
+- [x] W2-T3: /board refresh + accountability board embed
 
 ### Wave 3 (depends on Wave 2)
-- [ ] W3-T1: Celebration message in #the-meat-grinder on task completion
-- [ ] W3-T2: Board auto-update on task state change
+- [x] W3-T1: Celebration message in #the-meat-grinder on task completion
+- [x] W3-T2: Board auto-update on task state change
 
-**Gate**: Full task lifecycle works. Manual Discord verification checklist passes.
+**Gate**: Full task lifecycle works. Manual Discord verification checklist passes. ✅ (code complete, needs live Discord test)
 
 ---
 

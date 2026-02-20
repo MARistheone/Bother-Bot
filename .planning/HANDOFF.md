@@ -7,60 +7,61 @@
 ## Last Session
 
 - **Date**: 2026-02-19
-- **Duration**: Phase 1 Waves 2-3 implementation + gate
+- **Duration**: Phase 2 full implementation (all 3 waves)
 - **Agent**: Claude Code (Opus 4.6)
 
 ## What Was Built
 
-- `src/embeds.py` — build_task_embed (pending/complete/overdue), build_board_embed, build_celebration_embed, build_shame_embed
-- `src/views.py` — TaskView with Done (success) and Snooze (secondary) buttons, timeout=None, deterministic custom_ids
-- `src/bot.py` — commands.Bot, setup_hook (init_db, cog loading), on_ready (tree sync), logging
-- `tests/test_embeds.py` — 26 tests covering all embed types, colors, fields, sorting, timestamps
-- `tests/test_db.py` — 17 tests covering all CRUD ops, overdue candidates, recurring tasks, score accumulation
-- Installed pytest-asyncio for async test support
+- `src/db.py` — config table, get_config/set_config, update_task_due_date, get_active_task_ids
+- `src/embeds.py` — build_welcome_embed for new user channels
+- `src/views.py` — Full Mark Done + Snooze callbacks (DB update, score, embed edit, celebration, board refresh)
+- `src/cogs/accountability.py` — /opt-in, /board refresh, /set-meat-grinder, refresh_board() helper
+- `src/cogs/tasks.py` — /task add with due_date default, recurrence choices, private channel delivery
+- `src/bot.py` — setup_hook re-registers persistent TaskViews for active tasks on restart
+- `.planning/plans/phase-2-core-commands.md` — Full XML task specs
 
 ## What Was NOT Built
 
-- Phase 2 plan file (needs to be created before Phase 2 work begins)
-- Cog files (src/cogs/tasks.py, accountability.py, loops.py) — skeleton only, loaded by bot.py
+- Phase 3 (automation loops: overdue checker, Wall of Shame, daily reset)
+- src/cogs/loops.py (not yet created)
 - GitHub remote repo (PAT lacks Administration permission)
+- Live Discord testing (needs real token)
 
 ## Current Position
 
-- **Phase**: 1 — Foundation (COMPLETE)
-- **Wave**: All waves done. Phase 1 Gate passed (54/54 tests, bot imports, Dockerfile verified)
-- **Next Task**: Create Phase 2 plan, then execute Phase 2 Wave 1
+- **Phase**: 2 — Core Commands (COMPLETE, code done, needs live Discord test)
+- **Wave**: All waves done. 54/54 tests pass.
+- **Next Task**: Phase 3 planning + implementation, or live Discord test of Phase 2
 
 ## Blockers
 
-- GitHub repo creation deferred — user's PAT needs broader scope
-- Docker not available on dev machine (builds on Synology NAS)
-- Phase 2 requires a test Discord server with bot token in .env
+- Live Discord testing: needs .env with real DISCORD_TOKEN and GUILD_ID
+- GitHub repo creation deferred — PAT needs broader scope
 
 ## Decisions Made
 
-1. discord.py View requires running event loop — verify scripts use asyncio.run()
-2. pytest-asyncio added for async DB tests (mode=strict)
-3. DB tests use tmp_path + monkeypatch to isolate DB_PATH per test
-4. Cog loading in bot.py silently skips missing extensions (ExtensionNotFound)
+1. config table (key/value) for guild-level settings (board channel, board message, meat grinder)
+2. refresh_board() is a module-level async helper, importable from views.py via deferred import
+3. Mark Done + Snooze handlers live in views.py (not cogs) for persistent view re-registration
+4. /set-meat-grinder admin command to configure celebration channel
+5. Snooze resets overdue→pending status in addition to pushing due date
 
 ## Open Questions
 
 - Does the user have a test Discord server set up with a bot token?
-- Should Phase 2 plan be created now or does the user want to review Phase 1 first?
+- Should we test Phase 2 live before starting Phase 3?
 
 ## For the Next Session
 
 ```
 1. Read CLAUDE.md
 2. Read .planning/STATE.md
-3. Create .planning/plans/phase-2-core-commands.md (XML task specs for Phase 2)
-4. Activate venv: source .venv/Scripts/activate
-5. Set up .env with real DISCORD_TOKEN and GUILD_ID
-6. Execute Phase 2 Wave 1 (W1-T1: /opt-in, W1-T2: /task add)
-7. Test against live Discord server
-8. Atomic git commit per task
-9. Update STATE.md and HANDOFF.md
+3. Set up .env with real DISCORD_TOKEN and GUILD_ID (if testing)
+4. Create .planning/plans/phase-3-automation.md (XML task specs)
+5. Execute Phase 3 Wave 1 (overdue checker, Wall of Shame, daily reset loops)
+6. Execute Phase 3 Wave 2 (/prod command, recurring task generation)
+7. Atomic git commit per task
+8. Update STATE.md and HANDOFF.md
 ```
 
 ---
