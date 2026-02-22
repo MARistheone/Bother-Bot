@@ -9,7 +9,7 @@
 ## What Was Done This Session
 
 - **W2-T1**: Deployed to Synology NAS via Docker Compose using SCP. Fixed DB_PATH in `.env`.
-- **W2-T2**: Volume persistence test passed. Data confirmed saving to `/volume1/homes/amiel/bother_bot/data/database.db` and surviving container restarts.
+- **W2-T2**: Volume persistence test passed. Data confirmed saving to `/volume1/docker/bother-bot/data/database.db` and surviving container restarts.
 - **W2-T3**: Browsed Discord, verified bot registration via `/opt-in`, tested task creation with `/task add`, verified completion sets status to done correctly with points awarded, set meat-grinder channel, viewed updated accountability board. Screenshots generated.
 - Added snooze notifications to the meat grinder channel instead of creating a second board. Changes made to `src/embeds.py`, `src/constants.py`, and `src/views.py`. Successfully deployed.
 - Added automatic board refreshing whenever a user runs `/task add` or `/opt-in` to ensure the board is always up to date with new tasks or signups. Changes made to `src/cogs/tasks.py` and `src/cogs/accountability.py`. Successfully deployed.
@@ -24,5 +24,5 @@
 ## Next Action
 
 - **Monitor bot performance and let user test features**
-- Project Phase 4 complete and bot deployed to new `/volume1/docker/bother_bot` environment.
+- Project Phase 4 complete and bot deployed to `/volume1/docker/bother-bot` environment.
 - Any future phases will consist of monitoring user engagement or expanding on the "bothering" mechanisms.

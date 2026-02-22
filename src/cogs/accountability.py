@@ -81,10 +81,17 @@ class AccountabilityCog(commands.Cog):
 
         user = await db.get_user(uid)
         if user and user["private_channel_id"]:
-            await interaction.response.send_message(
-                "You're already registered!", ephemeral=True
-            )
-            return
+            # Verify the channel still exists
+            existing = interaction.guild.get_channel(int(user["private_channel_id"]))
+            if existing:
+                await interaction.response.send_message(
+                    "You're already registered!", ephemeral=True
+                )
+                return
+            # Channel was deleted — fall through to recreate it
+            log.info("Private channel %s for user %s was deleted, recreating", user["private_channel_id"], uid)
+
+        await interaction.response.defer(ephemeral=True)
 
         # Register user if not in DB
         if not user:
@@ -109,9 +116,8 @@ class AccountabilityCog(commands.Cog):
             )
         except (discord.Forbidden, discord.HTTPException) as e:
             log.error("Failed to create private channel for user %s: %s", uid, e)
-            await interaction.response.send_message(
-                "Couldn't create your task channel. The bot may lack permissions.",
-                ephemeral=True,
+            await interaction.followup.send(
+                "Couldn't create your task channel. The bot may lack permissions."
             )
             return
 
@@ -124,8 +130,8 @@ class AccountabilityCog(commands.Cog):
         except (discord.Forbidden, discord.HTTPException) as e:
             log.warning("Failed to send welcome embed to %s: %s", channel.id, e)
 
-        await interaction.response.send_message(
-            f"You're in! Check out {channel.mention}", ephemeral=True
+        await interaction.followup.send(
+            f"You're in! Check out {channel.mention}"
         )
         log.info("User %s opted in, channel %s created", uid, channel.id)
 
@@ -233,26 +239,30 @@ class AccountabilityCog(commands.Cog):
         current: str,
     ) -> list[app_commands.Choice[str]]:
         """Autocomplete active task descriptions for the selected user."""
-        user = interaction.namespace.user
-        if not user:
+        try:
+            user = interaction.namespace.user
+            if not user:
+                return []
+
+            # During autocomplete, 'user' may be a resolved Member or just a string ID
+            uid = str(getattr(user, "id", user))
+            pending = await db.get_tasks_for_user(uid, status="pending")
+            overdue = await db.get_tasks_for_user(uid, status="overdue")
+            active_tasks = pending + overdue
+
+            choices = []
+            for t in active_tasks:
+                desc = t["description"]
+                if current.lower() in desc.lower():
+                    # Discord limits Choice name to 100 chars
+                    label = desc[:100]
+                    choices.append(app_commands.Choice(name=label, value=desc))
+                if len(choices) >= 25:  # Discord max autocomplete results
+                    break
+            return choices
+        except Exception as e:
+            log.error("prod_task autocomplete failed: %s", e)
             return []
-
-        # During autocomplete, 'user' may be a resolved Member or just a string ID
-        uid = str(getattr(user, "id", user))
-        pending = await db.get_tasks_for_user(uid, status="pending")
-        overdue = await db.get_tasks_for_user(uid, status="overdue")
-        active_tasks = pending + overdue
-
-        choices = []
-        for t in active_tasks:
-            desc = t["description"]
-            if current.lower() in desc.lower():
-                # Discord limits Choice name to 100 chars
-                label = desc[:100]
-                choices.append(app_commands.Choice(name=label, value=desc))
-            if len(choices) >= 25:  # Discord max autocomplete results
-                break
-        return choices
 
     @app_commands.command(
         name="post-info",

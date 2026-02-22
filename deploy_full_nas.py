@@ -19,34 +19,36 @@ try:
     pwd = "sy#Woofy9420"
 
     print("Setting up new directory structure...")
-    run(ssh, "mkdir -p /volume1/docker/bother_bot/src/cogs")
-    run(ssh, "mkdir -p /volume1/docker/bother_bot/data")
+    run(ssh, "mkdir -p /volume1/docker/bother-bot/src/cogs")
+    run(ssh, "mkdir -p /volume1/docker/bother-bot/data")
 
     # Stop old container if running from old dir
     print("Stopping any old containers...")
-    run(ssh, f"echo {pwd} | sudo -S /usr/local/bin/docker compose -f /volume1/homes/amiel/bother_bot/docker-compose.yml down")
-    run(ssh, f"echo {pwd} | sudo -S /usr/local/bin/docker compose -f /volume1/docker/bother_bot/docker-compose.yml down")
+    run(ssh, f"echo {pwd} | sudo -S /usr/local/bin/docker compose -f /volume1/homes/amiel/bother-bot/docker-compose.yml down")
+    run(ssh, f"echo {pwd} | sudo -S /usr/local/bin/docker compose -f /volume1/docker/bother-bot/docker-compose.yml down")
 
     # Copy old database over if it hasn't been moved
-    run(ssh, f"echo {pwd} | sudo -S cp -a /volume1/homes/amiel/bother_bot/data/* /volume1/docker/bother_bot/data/ 2>/dev/null || true")
+    run(ssh, f"echo {pwd} | sudo -S cp -a /volume1/homes/amiel/bother-bot/data/* /volume1/docker/bother-bot/data/ 2>/dev/null || true")
 
     files_to_upload = [
-        "bot.py",
         "Dockerfile",
         "docker-compose.yml",
         "requirements.txt",
         ".env",
         "src/__init__.py",
+        "src/bot.py",
         "src/constants.py",
         "src/db.py",
         "src/embeds.py",
+        "src/scoring.py",
         "src/views.py",
         "src/cogs/__init__.py",
         "src/cogs/accountability.py",
-        "src/cogs/tasks.py"
+        "src/cogs/loops.py",
+        "src/cogs/tasks.py",
     ]
     
-    remote_dir = "/volume1/docker/bother_bot"
+    remote_dir = "/volume1/docker/bother-bot"
     
     for f in files_to_upload:
         local_path = os.path.join(r"c:\Users\Amiel\Documents\Bother Bot", f)

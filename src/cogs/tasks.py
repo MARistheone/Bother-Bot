@@ -52,15 +52,16 @@ class TasksCog(commands.Cog):
             )
             return
 
+        await interaction.response.defer(ephemeral=True)
+
         # Parse or default due_date
         now = datetime.datetime.now(datetime.timezone.utc)
         if due_date:
-            # Use dateparser to support things like "tomorrow", "next tuesday", "in 3 days"
             parsed_date = dateparser.parse(due_date, settings={'TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': True})
             if parsed_date:
                 due_date_str = parsed_date.strftime("%Y-%m-%d")
             else:
-                due_date_str = due_date # fallback in case dateparser fails
+                due_date_str = due_date
         else:
             tomorrow = now + datetime.timedelta(days=1)
             due_date_str = tomorrow.strftime("%Y-%m-%d")
@@ -75,8 +76,8 @@ class TasksCog(commands.Cog):
         # Send to user's private channel
         channel = self.bot.get_channel(int(user["private_channel_id"]))
         if not channel:
-            await interaction.response.send_message(
-                "Couldn't find your task channel. Contact an admin.", ephemeral=True
+            await interaction.followup.send(
+                "Couldn't find your task channel. Contact an admin."
             )
             return
 
@@ -85,14 +86,13 @@ class TasksCog(commands.Cog):
             await db.update_task_message_id(task_id, str(msg.id))
         except (discord.Forbidden, discord.HTTPException) as e:
             log.error("Failed to send task %d to channel: %s", task_id, e)
-            await interaction.response.send_message(
-                "Task saved but couldn't send to your channel. Contact an admin.",
-                ephemeral=True,
+            await interaction.followup.send(
+                "Task saved but couldn't send to your channel. Contact an admin."
             )
             return
 
-        await interaction.response.send_message(
-            f"Task added! Check {channel.mention}", ephemeral=True
+        await interaction.followup.send(
+            f"Task added! Check {channel.mention}"
         )
         log.info("Task %d created for user %s: %s", task_id, uid, description)
 
@@ -123,6 +123,7 @@ class TasksCog(commands.Cog):
         new_due_date: str | None = None,
         new_recurrence: app_commands.Choice[str] | None = None,
     ) -> None:
+        await interaction.response.defer(ephemeral=True)
         uid = str(interaction.user.id)
 
         # Match task string to actual task for this user
@@ -132,9 +133,8 @@ class TasksCog(commands.Cog):
 
         target = next((t for t in all_active if t["description"] == task), None)
         if not target:
-            await interaction.response.send_message(
-                "I couldn't find that active task. Did you already complete it?",
-                ephemeral=True
+            await interaction.followup.send(
+                "I couldn't find that active task. Did you already complete it?"
             )
             return
 
@@ -170,7 +170,7 @@ class TasksCog(commands.Cog):
                     except (discord.NotFound, discord.Forbidden, discord.HTTPException) as e:
                         log.warning("Failed to edit task message for task %d: %s", task_id, e)
 
-        await interaction.response.send_message("Task updated!", ephemeral=True)
+        await interaction.followup.send("Task updated!")
 
         try:
             from src.cogs.accountability import refresh_board
@@ -178,30 +178,102 @@ class TasksCog(commands.Cog):
         except Exception as e:
             log.warning("Failed to refresh board after task edit: %s", e)
 
+    @task_group.command(name="remove", description="Remove a task")
+    @app_commands.describe(task="The task you want to remove")
+    async def task_remove(
+        self,
+        interaction: discord.Interaction,
+        task: str,
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+        uid = str(interaction.user.id)
+
+        pending = await db.get_tasks_for_user(uid, status="pending")
+        overdue = await db.get_tasks_for_user(uid, status="overdue")
+        all_active = pending + overdue
+
+        target = next((t for t in all_active if t["description"] == task), None)
+        if not target:
+            await interaction.followup.send(
+                "Couldn't find that task. It may already be completed or removed."
+            )
+            return
+
+        task_id = target["id"]
+
+        # Delete the task message from the private channel if possible
+        if target["message_id"]:
+            user_data = await db.get_user(uid)
+            if user_data and user_data["private_channel_id"]:
+                channel = self.bot.get_channel(int(user_data["private_channel_id"]))
+                if channel:
+                    try:
+                        msg = await channel.fetch_message(int(target["message_id"]))
+                        await msg.delete()
+                    except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                        pass
+
+        await db.delete_task(task_id)
+        await interaction.followup.send(
+            f"Task removed: **{target['description']}**"
+        )
+        log.info("Task %d removed by user %s", task_id, uid)
+
+        try:
+            from src.cogs.accountability import refresh_board
+            await refresh_board(self.bot)
+        except Exception as e:
+            log.warning("Failed to refresh board after task %d removal: %s", task_id, e)
+
+    @task_remove.autocomplete("task")
+    async def task_remove_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        try:
+            uid = str(interaction.user.id)
+            pending = await db.get_tasks_for_user(uid, status="pending")
+            overdue = await db.get_tasks_for_user(uid, status="overdue")
+            active_tasks = pending + overdue
+
+            choices = []
+            for t in active_tasks:
+                desc = t["description"]
+                if current.lower() in desc.lower():
+                    label = desc[:100]
+                    choices.append(app_commands.Choice(name=label, value=desc))
+                if len(choices) >= 25:
+                    break
+            return choices
+        except Exception as e:
+            log.error("task_remove autocomplete failed for user %s: %s", interaction.user.id, e)
+            return []
+
     @task_edit.autocomplete("task")
     async def task_edit_autocomplete(
         self,
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        user = interaction.namespace.user if hasattr(interaction.namespace, 'user') else interaction.user
-        if not user:
+        try:
+            uid = str(interaction.user.id)
+            pending = await db.get_tasks_for_user(uid, status="pending")
+            overdue = await db.get_tasks_for_user(uid, status="overdue")
+            active_tasks = pending + overdue
+
+            choices = []
+            for t in active_tasks:
+                desc = t["description"]
+                if current.lower() in desc.lower():
+                    label = desc[:100]
+                    choices.append(app_commands.Choice(name=label, value=desc))
+                if len(choices) >= 25:
+                    break
+            return choices
+        except Exception as e:
+            log.error("task_edit autocomplete failed for user %s: %s", interaction.user.id, e)
             return []
-        
-        uid = str(user.id)
-        pending = await db.get_tasks_for_user(uid, status="pending")
-        overdue = await db.get_tasks_for_user(uid, status="overdue")
-        active_tasks = pending + overdue
-        
-        choices = []
-        for t in active_tasks:
-            desc = t["description"]
-            if current.lower() in desc.lower():
-                label = desc[:100]
-                choices.append(app_commands.Choice(name=label, value=desc))
-            if len(choices) >= 25:
-                break
-        return choices
 
 
 async def setup(bot: commands.Bot) -> None:

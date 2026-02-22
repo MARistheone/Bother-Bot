@@ -22,7 +22,7 @@ try:
         "src/views.py"
     ]
     
-    remote_dir = "/volume1/homes/amiel/bother_bot"
+    remote_dir = "/volume1/docker/bother-bot"
     pwd = "sy#Woofy9420"
     
     for f in files_to_upload:

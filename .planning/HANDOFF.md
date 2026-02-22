@@ -14,7 +14,7 @@
 
 - Scripted SCP deployment to correctly bypass Synology's missing `git clone` or restricted SFTP subsystems.
 - Verified Docker execution remotely via paramiko and docker-compose.
-- Tested volume persistence across restarts by inspecting `/volume1/homes/amiel/bother_bot/data/` for `database.db`.
+- Tested volume persistence across restarts by inspecting `/volume1/docker/bother-bot/data/` for `database.db`.
 - Ran an end-to-end task cycle on a live Discord server with a browser subagent: task created -> marked done -> points awarded -> board updated -> verified in general channel. `W2-T1`, `W2-T2`, and `W2-T3` marked off.
 
 ## What Was NOT Built

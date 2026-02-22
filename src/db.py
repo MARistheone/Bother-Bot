@@ -240,6 +240,13 @@ async def update_task_details(task_id: int, description: str, due_date: str, rec
         await db.commit()
 
 
+async def delete_task(task_id: int) -> None:
+    """Delete a task by ID."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        await db.commit()
+
+
 async def get_active_task_ids() -> list[int]:
     """Return IDs of all pending/overdue tasks (for persistent view re-registration)."""
     async with aiosqlite.connect(DB_PATH) as db:
